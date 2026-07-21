@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-bg-base: var(--bg-base);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-border: var(--border);
+  --color-glass-border: var(--glass-border);
+  --color-glass-bg: var(--glass-bg);
+  --color-shadow-color: var(--shadow-color);
+}
+
+@layer base {
+  :root {
+    /* Pure White Theme (Default) */
+    --bg-base: #f9f9fb;
+    --bg-panel: #ffffff;
+    --bg-elevated: #ffffff;
+    --text-primary: #111111;
+    --text-secondary: #666666;
+    --text-tertiary: #999999;
+    --accent: #000000;
+    --accent-hover: #333333;
+    --border: #eaeaea;
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --glass-bg: rgba(255, 255, 255, 0.6);
+    --shadow-color: rgba(0, 0, 0, 0.05);
+  }
+
+  [data-theme='violet-gold'] {
+    --bg-base: #1a0b2e;
+    --bg-panel: #2d1b4e;
+    --bg-elevated: #3b2563;
+    --text-primary: #ffffff;
+    --text-secondary: #bba8d8;
+    --text-tertiary: #8b74b1;
+    --accent: #d4af37;
+    --accent-hover: #f1c94f;
+    --border: #4a3175;
+    --glass-border: rgba(212, 175, 55, 0.2);
+    --glass-bg: rgba(45, 27, 78, 0.6);
+    --shadow-color: rgba(0, 0, 0, 0.3);
+  }
+
+  [data-theme='charcoal'] {
+    --bg-base: #18181a;
+    --bg-panel: #202022;
+    --bg-elevated: #28282b;
+    --text-primary: #f5f5f6;
+    --text-secondary: #a0a0a5;
+    --text-tertiary: #707075;
+    --accent: #ffffff;
+    --accent-hover: #e0e0e0;
+    --border: #333336;
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-bg: rgba(32, 32, 34, 0.6);
+    --shadow-color: rgba(0, 0, 0, 0.25);
+  }
+
+  [data-theme='walnut-wood'] {
+    --bg-base: #2a1f1a;
+    --bg-panel: #3b2c24;
+    --bg-elevated: #4e3a31;
+    --text-primary: #f2e3d5;
+    --text-secondary: #b89b88;
+    --text-tertiary: #8f7464;
+    --accent: #d97736;
+    --accent-hover: #ff914d;
+    --border: #5c453a;
+    --glass-border: rgba(217, 119, 54, 0.15);
+    --glass-bg: rgba(59, 44, 36, 0.7);
+    --shadow-color: rgba(0, 0, 0, 0.4);
+  }
+
+  [data-theme='titanium'] {
+    --bg-base: #b0b3b8;
+    --bg-panel: #c4c7cc;
+    --bg-elevated: #d8dbdf;
+    --text-primary: #1c1e21;
+    --text-secondary: #4a4d52;
+    --text-tertiary: #757980;
+    --accent: #3b3d42;
+    --accent-hover: #242528;
+    --border: #9ea1a6;
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-bg: rgba(196, 199, 204, 0.5);
+    --shadow-color: rgba(28, 30, 33, 0.1);
+  }
+
+  [data-theme='frosted-glass'] {
+    --bg-base: #0A0A0B;
+    --bg-panel: rgba(0, 0, 0, 0.2);
+    --bg-elevated: rgba(255, 255, 255, 0.05);
+    --text-primary: #F5F5F7;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-tertiary: rgba(255, 255, 255, 0.4);
+    --accent: #ffffff;
+    --accent-hover: rgba(255, 255, 255, 0.8);
+    --border: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.05);
+    --glass-bg: rgba(0, 0, 0, 0.4);
+    --shadow-color: rgba(0, 0, 0, 0.5);
+  }
+
+  [data-theme='midnight'] {
+    --bg-base: #050b14;
+    --bg-panel: #0a1324;
+    --bg-elevated: #111d36;
+    --text-primary: #e6f0ff;
+    --text-secondary: #8da6d1;
+    --text-tertiary: #5a74a1;
+    --accent: #00e5ff;
+    --accent-hover: #66f0ff;
+    --border: #182847;
+    --glass-border: rgba(0, 229, 255, 0.15);
+    --glass-bg: rgba(10, 19, 36, 0.6);
+    --shadow-color: rgba(0, 0, 0, 0.5);
+  }
+
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    transition: background-color 0.4s ease, color 0.4s ease;
+    user-select: none; /* Make it feel like a desktop app */
+    overflow: hidden;
+  }
+}
+
+@layer utilities {
+  .premium-sidebar-glass {
+    background-color: color-mix(in srgb, var(--bg-panel) 42%, transparent);
+    backdrop-filter: blur(50px) saturate(145%);
+    -webkit-backdrop-filter: blur(50px) saturate(145%);
+    
+    /* Elegant glass edge borders for specular highlight */
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    
+    box-shadow: 
+      /* Subtle light reflections & highlights */
+      inset 0 1px 0.5px rgba(255, 255, 255, 0.16),
+      inset 1px 0 0.5px rgba(255, 255, 255, 0.10),
+      /* Inner shadow for depth and glow */
+      inset 0 0 15px rgba(255, 255, 255, 0.02),
+      /* Premium depth shadow */
+      0 30px 60px -15px var(--shadow-color);
+  }
+
+  .glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px var(--shadow-color);
+  }
+  
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 4px 16px var(--shadow-color);
+  }
+
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+}
+
+/* Custom Scrollbar for Webkit */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}

@@ -1,0 +1,236 @@
+import { create } from 'zustand';
+import { Track } from '../types';
+import { engine } from '../lib/audioEngine';
+import { useSettingsStore } from './useSettingsStore';
+import { useLibraryStore } from './useLibraryStore';
+
+interface PlayerState {
+  currentTrack: Track | null;
+  queue: Track[];
+  queueIndex: number;
+  isPlaying: boolean;
+  currentTime: number;
+  duration: number;
+  viewMode: 'vinyl' | 'waveform' | 'minimal';
+  nowPlayingOpen: boolean;
+  shuffle: boolean;
+  repeatMode: 'none' | 'one' | 'all';
+  lastPlaylistId: string | null;
+  
+  playTrack: (track: Track, queue?: Track[], playlistId?: string | null) => void;
+  pause: () => void;
+  resume: () => void;
+  next: () => void;
+  previous: () => void;
+  seek: (time: number) => void;
+  setViewMode: (mode: 'vinyl' | 'waveform' | 'minimal') => void;
+  setNowPlayingOpen: (open: boolean) => void;
+  toggleShuffle: () => void;
+  toggleRepeatMode: () => void;
+  initPlayer: () => Promise<void>;
+}
+
+export const usePlayerStore = create<PlayerState>((set, get) => {
+  // Bind engine events
+  engine.onTimeUpdate = (time) => {
+    set({ currentTime: time });
+    const lastSaved = parseFloat(localStorage.getItem('currentTime') || '0');
+    if (Math.abs(time - lastSaved) >= 1) {
+      localStorage.setItem('currentTime', time.toString());
+    }
+  };
+
+  engine.onDurationChange = (duration) => {
+    set({ duration });
+  };
+
+  engine.onEnded = () => {
+    get().next();
+  };
+
+  // Safe JSON Parsing helper
+  const getSavedJSON = <T>(key: string, fallback: T): T => {
+    try {
+      const val = localStorage.getItem(key);
+      return val ? JSON.parse(val) : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
+  return {
+    currentTrack: getSavedJSON<Track | null>('currentTrack', null),
+    queue: getSavedJSON<Track[]>('queue', []),
+    queueIndex: parseInt(localStorage.getItem('queueIndex') || '-1', 10),
+    isPlaying: false,
+    currentTime: parseFloat(localStorage.getItem('currentTime') || '0'),
+    duration: getSavedJSON<Track | null>('currentTrack', null)?.duration || 0,
+    viewMode: 'minimal',
+    nowPlayingOpen: false,
+    shuffle: localStorage.getItem('shuffle') === 'true',
+    repeatMode: (localStorage.getItem('repeatMode') as 'none' | 'one' | 'all') || 'none',
+    lastPlaylistId: localStorage.getItem('lastPlaylistId') || null,
+
+    initPlayer: async () => {
+      const track = get().currentTrack;
+      if (track) {
+        try {
+          await engine.loadTrackOnly(track, get().currentTime);
+        } catch (e) {
+          console.warn("initPlayer loadTrackOnly failed:", e);
+        }
+      }
+    },
+
+    playTrack: async (track, queue, playlistId = null) => {
+      const { setVolume, eqBands, volume, reverbPreset } = useSettingsStore.getState();
+      
+      // Apply current settings
+      engine.setVolume(volume);
+      engine.setEqBands(eqBands);
+      engine.setReverbPreset(reverbPreset);
+      
+      const resolvedQueue = queue || get().queue;
+      const index = resolvedQueue.findIndex(t => t.id === track.id);
+      
+      // Update play count and last played timestamp in centralized library store
+      useLibraryStore.getState().updateTrackPlayCount(track.id);
+      
+      set({ 
+        currentTrack: track, 
+        isPlaying: true,
+        queue: resolvedQueue,
+        queueIndex: index !== -1 ? index : get().queueIndex,
+        lastPlaylistId: playlistId
+      });
+
+      localStorage.setItem('currentTrack', JSON.stringify(track));
+      localStorage.setItem('queue', JSON.stringify(resolvedQueue));
+      localStorage.setItem('queueIndex', (index !== -1 ? index : get().queueIndex).toString());
+      if (playlistId) {
+        localStorage.setItem('lastPlaylistId', playlistId);
+      } else {
+        localStorage.removeItem('lastPlaylistId');
+      }
+
+      try {
+        await engine.playTrack(track);
+      } catch (err) {
+        console.warn("Playback failed or aborted:", err);
+        if (err instanceof Error && err.name !== 'AbortError') {
+          set({ isPlaying: false });
+        }
+      }
+    },
+
+    pause: () => {
+      engine.pause();
+      set({ isPlaying: false });
+    },
+
+    resume: () => {
+      engine.resume();
+      set({ isPlaying: true });
+    },
+
+    next: () => {
+      const { queue, queueIndex, shuffle, repeatMode } = get();
+      if (queue.length === 0) return;
+
+      if (repeatMode === 'one') {
+        get().playTrack(queue[queueIndex]);
+        return;
+      }
+
+      if (shuffle) {
+        let nextIndex = Math.floor(Math.random() * queue.length);
+        if (queue.length > 1 && nextIndex === queueIndex) {
+          nextIndex = (nextIndex + 1) % queue.length;
+        }
+        get().playTrack(queue[nextIndex]);
+        return;
+      }
+
+      if (queueIndex < queue.length - 1) {
+        get().playTrack(queue[queueIndex + 1]);
+      } else if (repeatMode === 'all') {
+        get().playTrack(queue[0]);
+      } else {
+        set({ isPlaying: false });
+      }
+    },
+
+    previous: () => {
+      const { queue, queueIndex, currentTime, shuffle, repeatMode } = get();
+      if (queue.length === 0) return;
+
+      if (currentTime > 3) {
+        engine.seek(0);
+        set({ currentTime: 0 });
+        localStorage.setItem('currentTime', '0');
+      } else if (shuffle) {
+        let prevIndex = Math.floor(Math.random() * queue.length);
+        if (queue.length > 1 && prevIndex === queueIndex) {
+          prevIndex = (prevIndex - 1 + queue.length) % queue.length;
+        }
+        get().playTrack(queue[prevIndex]);
+      } else if (queueIndex > 0) {
+        get().playTrack(queue[queueIndex - 1]);
+      } else {
+        if (repeatMode === 'all') {
+          get().playTrack(queue[queue.length - 1]);
+        } else {
+          engine.seek(0);
+          set({ currentTime: 0 });
+          localStorage.setItem('currentTime', '0');
+        }
+      }
+    },
+
+    seek: (time) => {
+      engine.seek(time);
+      set({ currentTime: time });
+      localStorage.setItem('currentTime', time.toString());
+    },
+    
+    setViewMode: (mode) => set({ viewMode: mode }),
+    setNowPlayingOpen: (open) => set({ nowPlayingOpen: open }),
+
+    toggleShuffle: () => {
+      const newShuffle = !get().shuffle;
+      set({ shuffle: newShuffle });
+      localStorage.setItem('shuffle', newShuffle.toString());
+    },
+
+    toggleRepeatMode: () => {
+      const current = get().repeatMode;
+      let nextMode: 'none' | 'one' | 'all' = 'none';
+      if (current === 'none') nextMode = 'all';
+      else if (current === 'all') nextMode = 'one';
+      else nextMode = 'none';
+      
+      set({ repeatMode: nextMode });
+      localStorage.setItem('repeatMode', nextMode);
+    }
+  };
+});
+
+export function useActivePlayer() {
+  const tracks = useLibraryStore(s => s.tracks);
+  const player = usePlayerStore();
+  
+  const currentTrack = player.currentTrack 
+    ? (tracks.find(t => t.id === player.currentTrack?.id) || player.currentTrack) 
+    : null;
+    
+  const queue = player.queue.map(
+    qt => tracks.find(t => t.id === qt.id) || qt
+  );
+  
+  return {
+    ...player,
+    currentTrack,
+    queue
+  };
+}
+

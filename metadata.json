@@ -1,0 +1,6 @@
+{
+  "name": "Aura Music Player",
+  "description": "A premium desktop music player featuring high-end aesthetics, a custom Web Audio engine, vinyl and waveform visualizer modes, and local file system library management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
