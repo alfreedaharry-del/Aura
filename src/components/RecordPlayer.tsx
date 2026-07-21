@@ -4,12 +4,12 @@ import { Disc3 } from 'lucide-react';
 import { CoverArtImage } from '../lib/coverArt';
 
 interface RecordPlayerProps {
-  coverUrl?: string;
+  audioPath?: string;
   isPlaying: boolean;
   sizeClass?: string;
 }
 
-export const VinylRecord: React.FC<{ coverUrl?: string; isPlaying: boolean }> = ({ coverUrl, isPlaying }) => {
+export const VinylRecord: React.FC<{ audioPath?: string; isPlaying: boolean }> = ({ audioPath, isPlaying }) => {
   return (
     <motion.div
       className="absolute w-48 h-48 md:w-64 md:h-64"
@@ -51,8 +51,8 @@ export const VinylRecord: React.FC<{ coverUrl?: string; isPlaying: boolean }> = 
         
         {/* Center Label (Album Art miniaturized, perfectly circular) */}
         <div className="w-16 h-16 md:w-22 md:h-22 rounded-full bg-neutral-900 border-4 border-neutral-950 flex items-center justify-center overflow-hidden relative shadow-inner">
-          {coverUrl ? (
-            <CoverArtImage src={coverUrl} className="pointer-events-none select-none" wrapperClassName="bg-neutral-900" fallbackClassName="bg-neutral-800" />
+          {audioPath ? (
+            <CoverArtImage src={audioPath} className="pointer-events-none select-none" wrapperClassName="bg-neutral-900" fallbackClassName="bg-neutral-800" />
           ) : (
             <div className="w-full h-full bg-neutral-800" />
           )}
@@ -151,7 +151,7 @@ export const Tonearm: React.FC<{ isPlaying: boolean }> = ({ isPlaying }) => {
 };
 
 export const RecordPlayer: React.FC<RecordPlayerProps> = ({ 
-  coverUrl, 
+  audioPath, 
   isPlaying 
 }) => {
   const [isMobile, setIsMobile] = useState(false);
@@ -210,7 +210,7 @@ export const RecordPlayer: React.FC<RecordPlayerProps> = ({
         </div>
 
         {/* Vinyl Record sliding out from between back and front pocket layers */}
-        <VinylRecord coverUrl={coverUrl} isPlaying={isPlaying} />
+        <VinylRecord audioPath={audioPath} isPlaying={isPlaying} />
 
         {/* Cardboard Sleeve Front Cover (Perfect 90-degree corners, premium depth) */}
         <div 
@@ -219,8 +219,8 @@ export const RecordPlayer: React.FC<RecordPlayerProps> = ({
             clipPath: 'url(#sleeve-clip)',
           }}
         >
-          {coverUrl ? (
-            <CoverArtImage src={coverUrl} className="pointer-events-none select-none" wrapperClassName="bg-neutral-900" fallbackClassName="bg-neutral-800" />
+          {audioPath ? (
+            <CoverArtImage src={audioPath} className="pointer-events-none select-none" wrapperClassName="bg-neutral-900" fallbackClassName="bg-neutral-800" />
           ) : (
             <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
               <Disc3 size={48} className="text-neutral-600 animate-spin" style={{ animationDuration: '10s' }} />

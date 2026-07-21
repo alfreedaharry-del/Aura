@@ -8,7 +8,7 @@ function normalizeTrack(track: any): Track {
     artist: track.artist || 'Unknown Artist',
     album: track.album || 'Unknown Album',
     duration: track.duration || 0,
-    coverUrl: track.coverUrl || '/default-cover.svg',
+    coverUrl: track.filePath,
     filePath: track.filePath,
     dateAdded: track.dateAdded || Date.now(),
     playCount: 0,

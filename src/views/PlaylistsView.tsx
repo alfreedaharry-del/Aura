@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Track } from '../types';
+import { CoverArtImage } from '../lib/coverArt';
 
 export const PlaylistsView: React.FC = () => {
   const { tracks, directories, playlists, loadLibrary, toggleFavorite } = useLibraryStore();
@@ -729,7 +730,7 @@ export const PlaylistsView: React.FC = () => {
                       <div className="flex-1 flex items-center gap-3 md:gap-4 min-w-0" onDoubleClick={() => playTrack(track, filteredTracks)} onClick={() => playTrack(track, filteredTracks)}>
                         <div className="w-9 h-9 md:w-10 md:h-10 rounded shadow-sm overflow-hidden bg-[var(--bg-base)] flex-shrink-0 relative">
                           {track.coverUrl ? (
-                            <img src={track.coverUrl} className="w-full h-full object-cover" alt="" draggable="false" />
+                            <CoverArtImage src={track.coverUrl} className="w-full h-full object-cover" wrapperClassName="w-full h-full" fallbackClassName="bg-[var(--bg-elevated)]" alt="" />
                           ) : (
                             <div className="w-full h-full bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-tertiary)]">
                               <Music size={14} className="md:w-4 md:h-4" />
@@ -992,7 +993,7 @@ export const PlaylistsView: React.FC = () => {
                         >
                           <div className="w-10 h-10 rounded-lg overflow-hidden bg-[var(--bg-base)] flex-shrink-0 flex items-center justify-center border border-[var(--border)]/40 relative">
                             {track.coverUrl ? (
-                              <img src={track.coverUrl} className="w-full h-full object-cover" alt="" />
+                              <CoverArtImage src={track.coverUrl} className="w-full h-full object-cover" wrapperClassName="w-full h-full" fallbackClassName="bg-[var(--bg-elevated)]" alt="" />
                             ) : (
                               <Disc3 size={16} className="text-[var(--text-tertiary)] opacity-40" />
                             )}

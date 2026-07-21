@@ -1,71 +1,67 @@
 import React, { useEffect, useState } from 'react';
 import type { Track } from '../types';
+import { parseBlob, type IPicture } from 'music-metadata-browser';
 
 export const DEFAULT_COVER_URL = '/default-cover.svg';
 
-const loadedCoverCache = new Set<string>();
-const failedCoverCache = new Set<string>();
+const coverUrlCache = new Map<string, string | null>();
+const coverParsingPromises = new Map<string, Promise<string | null>>();
 
-function normalizeCoverUrl(coverUrl?: string | null): string {
-  if (!coverUrl || typeof coverUrl !== 'string') {
+function createCoverBlobUrl(picture: IPicture): string {
+  const blob = new Blob([picture.data], { type: picture.format || 'image/jpeg' });
+  return URL.createObjectURL(blob);
+}
+
+export async function preloadCoverArt(audioPath?: string | null): Promise<string> {
+  if (!audioPath) {
     return DEFAULT_COVER_URL;
   }
 
-  const trimmed = coverUrl.trim();
-  if (!trimmed) {
-    return DEFAULT_COVER_URL;
+  if (coverUrlCache.has(audioPath)) {
+    const cached = coverUrlCache.get(audioPath);
+    return cached ?? DEFAULT_COVER_URL;
   }
 
-  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
-    return trimmed;
+  if (coverParsingPromises.has(audioPath)) {
+    const cachedPromise = coverParsingPromises.get(audioPath)!;
+    const result = await cachedPromise;
+    return result ?? DEFAULT_COVER_URL;
   }
 
-  if (trimmed.startsWith('/')) {
-    return trimmed;
-  }
+  const parsePromise = (async (): Promise<string | null> => {
+    try {
+      const response = await fetch(audioPath);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch audio for artwork: ${response.status}`);
+      }
 
-  return `/${trimmed.replace(/^\.\//, '')}`;
-}
+      const blob = await response.blob();
+      const metadata = await parseBlob(blob);
+      const picture = metadata.common.picture?.[0];
 
-export function resolveTrackCoverUrl(coverUrl?: string | null): string {
-  const normalized = normalizeCoverUrl(coverUrl);
-  return normalized;
-}
+      if (picture && picture.data) {
+        const coverUrl = createCoverBlobUrl(picture);
+        coverUrlCache.set(audioPath, coverUrl);
+        return coverUrl;
+      }
+    } catch (error) {
+      console.warn('[coverArt] Could not extract embedded artwork for', audioPath, error);
+    }
 
-export function preloadCoverArt(coverUrl?: string | null): Promise<string> {
-  const resolved = resolveTrackCoverUrl(coverUrl);
+    coverUrlCache.set(audioPath, null);
+    return null;
+  })();
 
-  if (resolved === DEFAULT_COVER_URL) {
-    return Promise.resolve(DEFAULT_COVER_URL);
-  }
-
-  if (loadedCoverCache.has(resolved)) {
-    return Promise.resolve(resolved);
-  }
-
-  if (failedCoverCache.has(resolved)) {
-    return Promise.resolve(DEFAULT_COVER_URL);
-  }
-
-  return new Promise((resolve) => {
-    const image = new Image();
-    image.onload = () => {
-      loadedCoverCache.add(resolved);
-      resolve(resolved);
-    };
-    image.onerror = () => {
-      failedCoverCache.add(resolved);
-      resolve(DEFAULT_COVER_URL);
-    };
-    image.src = resolved;
-  });
+  coverParsingPromises.set(audioPath, parsePromise);
+  const result = await parsePromise;
+  return result ?? DEFAULT_COVER_URL;
 }
 
 export function preloadCoverBatch(tracks: Array<Track | null | undefined>) {
   void Promise.allSettled(
     tracks
       .filter((track): track is Track => Boolean(track))
-      .map((track) => preloadCoverArt(track.coverUrl))
+      .map((track) => preloadCoverArt(track.filePath))
   );
 }
 
@@ -73,49 +69,42 @@ function buildClassName(...parts: Array<string | undefined | null>) {
   return parts.filter(Boolean).join(' ').trim();
 }
 
-export function useCoverArt(coverUrl?: string | null) {
+export function useCoverArt(audioPath?: string | null) {
   const [displayUrl, setDisplayUrl] = useState<string>(DEFAULT_COVER_URL);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const nextUrl = resolveTrackCoverUrl(coverUrl);
-
-    if (nextUrl === DEFAULT_COVER_URL) {
-      setDisplayUrl(DEFAULT_COVER_URL);
-      setIsLoaded(true);
-      return;
-    }
-
-    if (loadedCoverCache.has(nextUrl)) {
-      setDisplayUrl(nextUrl);
-      setIsLoaded(true);
-      return;
-    }
-
-    if (failedCoverCache.has(nextUrl)) {
-      setDisplayUrl(DEFAULT_COVER_URL);
-      setIsLoaded(true);
-      return;
-    }
-
     let active = true;
+
+    if (!audioPath) {
+      setDisplayUrl(DEFAULT_COVER_URL);
+      setIsLoaded(false);
+      return;
+    }
+
     setDisplayUrl(DEFAULT_COVER_URL);
     setIsLoaded(false);
 
-    void preloadCoverArt(nextUrl).then((resolvedUrl) => {
+    void preloadCoverArt(audioPath).then((resolvedUrl) => {
       if (!active) {
         return;
       }
-      setDisplayUrl(resolvedUrl);
-      setIsLoaded(resolvedUrl !== DEFAULT_COVER_URL);
+
+      if (resolvedUrl === DEFAULT_COVER_URL) {
+        setDisplayUrl(DEFAULT_COVER_URL);
+        setIsLoaded(false);
+      } else {
+        setDisplayUrl(resolvedUrl);
+        setIsLoaded(true);
+      }
     });
 
     return () => {
       active = false;
     };
-  }, [coverUrl]);
+  }, [audioPath]);
 
-  return { displayUrl, isLoaded, resolvedUrl: resolveTrackCoverUrl(coverUrl) };
+  return { displayUrl, isLoaded };
 }
 
 interface CoverArtImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {

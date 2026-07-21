@@ -12,7 +12,7 @@ export class MusicLibraryService {
     const normalizedSongs: Track[] = registryTracks.map(track => ({
       ...track,
       album: track.album || 'Unknown Album',
-      coverUrl: track.coverUrl || '/default-cover.svg',
+      coverUrl: track.filePath,
     }));
 
     return {

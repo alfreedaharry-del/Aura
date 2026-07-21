@@ -126,11 +126,16 @@ export const NowPlayingView: React.FC<NowPlayingProps> = ({ onClose }) => {
       className="absolute inset-0 z-[60] bg-[var(--bg-base)] flex flex-col overflow-hidden"
     >
       {/* Background ambient lighting glow (subtle cover overlay) */}
-      {currentTrack.coverUrl && (
-        <div 
-          className="absolute inset-0 opacity-[0.06] sm:opacity-[0.10] bg-cover bg-center blur-[120px] scale-150 transition-all duration-1000 pointer-events-none"
-          style={{ backgroundImage: `url(${currentTrack.coverUrl})` }}
-        />
+      {currentTrack.filePath && (
+        <div className="absolute inset-0 opacity-[0.06] sm:opacity-[0.10] transition-all duration-1000 pointer-events-none">
+          <CoverArtImage
+            src={currentTrack.filePath}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover filter blur-[120px] scale-150"
+            wrapperClassName="w-full h-full"
+            fallbackClassName="bg-[var(--bg-base)]"
+          />
+        </div>
       )}
 
       {/* Header */}

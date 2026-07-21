@@ -3,7 +3,6 @@ import path from "path";
 import fs from "fs/promises";
 import { existsSync } from "fs";
 import { createServer as createViteServer } from "vite";
-import * as musicMetadata from "music-metadata";
 
 async function startServer() {
   const app = express();
@@ -33,30 +32,6 @@ async function startServer() {
     } catch (err: any) {
       console.warn('[server] Unable to load bundled music registry', err);
       res.status(500).json({ error: err.message });
-    }
-  });
-
-  // API Route: Get embedded cover image
-  app.get('/api/cover', async (req, res) => {
-    const filePath = req.query.path as string;
-    if (!filePath) return res.status(400).send('Path required');
-    try {
-      const decodedPath = decodeURIComponent(filePath);
-      const fullPath = path.join(process.cwd(), decodedPath.replace(/^\//, ''));
-      if (!existsSync(fullPath)) {
-        return res.status(404).send('File not found');
-      }
-      const metadata = await musicMetadata.parseFile(fullPath);
-      if (metadata.common.picture && metadata.common.picture.length > 0) {
-        const pic = metadata.common.picture[0];
-        res.contentType(pic.format);
-        res.set('Cache-Control', 'public, max-age=31536000, immutable');
-        res.send(Buffer.from(pic.data));
-      } else {
-        res.status(404).send('No cover found');
-      }
-    } catch (err: any) {
-      res.status(500).send(err.message);
     }
   });
 

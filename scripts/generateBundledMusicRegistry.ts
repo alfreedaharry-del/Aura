@@ -9,7 +9,6 @@ interface GeneratedTrack {
   artist: string;
   album?: string;
   duration: number;
-  coverUrl: string;
   filePath: string;
   dateAdded: number;
   fileSize: number;
@@ -53,7 +52,6 @@ async function walkDirectory(currentDir: string, tracks: GeneratedTrack[], rootD
     let artist = 'Unknown Artist';
     let album: string | undefined;
     let duration = 0;
-    let coverUrl = '/default-cover.svg';
 
     try {
       const metadata = await parseFile(fullPath);
@@ -61,10 +59,6 @@ async function walkDirectory(currentDir: string, tracks: GeneratedTrack[], rootD
       artist = metadata.common.artist || artist;
       album = metadata.common.album || undefined;
       duration = metadata.format.duration || 0;
-
-      if (metadata.common.picture && metadata.common.picture.length > 0) {
-        coverUrl = `/api/cover?path=${encodeURIComponent('songs/' + relativePath)}`;
-      }
     } catch (error) {
       console.warn(`[registry] Could not read metadata for ${publicPath}`, error);
     }
@@ -75,7 +69,6 @@ async function walkDirectory(currentDir: string, tracks: GeneratedTrack[], rootD
       artist,
       album,
       duration,
-      coverUrl,
       filePath: publicPath,
       dateAdded: stats.birthtimeMs || stats.mtimeMs || Date.now(),
       fileSize: stats.size,

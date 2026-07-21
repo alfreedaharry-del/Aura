@@ -124,7 +124,7 @@ export const HomeView: React.FC = () => {
                 {/* Left: Beautiful Floating Record Player */}
                 <div className="lg:col-span-6 flex flex-col items-center text-center p-4">
                   <div className="relative">
-                    <RecordPlayer coverUrl={activeTrack.coverUrl} isPlaying={isPlaying && currentTrack?.id === activeTrack.id} />
+                    <RecordPlayer audioPath={activeTrack.filePath} isPlaying={isPlaying && currentTrack?.id === activeTrack.id} />
                   </div>
                   
                   {/* Meta Details & Actions */}
