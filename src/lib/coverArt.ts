@@ -9,7 +9,10 @@ const coverParsingPromises = new Map<string, Promise<string | null>>();
 
 function createCoverBlobUrl(picture: IPicture): string {
   const blob = new Blob([picture.data], { type: picture.format || 'image/jpeg' });
-  return URL.createObjectURL(blob);
+  console.log('[coverArt] Blob created', 'mimeType=', picture.format || 'image/jpeg', 'size=', picture.data?.length ?? 0);
+  const blobUrl = URL.createObjectURL(blob);
+  console.log('[coverArt] URL.createObjectURL result', blobUrl);
+  return blobUrl;
 }
 
 export async function preloadCoverArt(audioPath?: string | null): Promise<string> {
@@ -30,22 +33,33 @@ export async function preloadCoverArt(audioPath?: string | null): Promise<string
 
   const parsePromise = (async (): Promise<string | null> => {
     try {
+      console.log('[coverArt] MP3 load start', audioPath);
       const response = await fetch(audioPath);
+      console.log('[coverArt] MP3 fetched', audioPath, 'status=', response.status, 'ok=', response.ok);
       if (!response.ok) {
         throw new Error(`Failed to fetch audio for artwork: ${response.status}`);
       }
 
       const blob = await response.blob();
-      const metadata = await parseBlob(blob);
-      const picture = metadata.common.picture?.[0];
+      console.log('[coverArt] MP3 loaded', audioPath, 'blobSize=', blob.size, 'type=', blob.type);
 
-      if (picture && picture.data) {
-        const coverUrl = createCoverBlobUrl(picture);
-        coverUrlCache.set(audioPath, coverUrl);
-        return coverUrl;
+      const metadata = await parseBlob(blob);
+      console.log('[coverArt] Metadata parsed', audioPath, 'common=', metadata.common)
+
+      const picture = metadata.common.picture?.[0];
+      if (!picture) {
+        console.warn('[coverArt] Artwork not found in metadata', audioPath, 'pictures=', metadata.common.picture?.length ?? 0);
+        coverUrlCache.set(audioPath, null);
+        return null;
       }
+
+      console.log('[coverArt] Artwork found', audioPath, 'mimeType=', picture.format, 'byteLength=', picture.data?.length ?? 0);
+      const coverUrl = createCoverBlobUrl(picture);
+      console.log('[coverArt] Blob URL created', audioPath, coverUrl);
+      coverUrlCache.set(audioPath, coverUrl);
+      return coverUrl;
     } catch (error) {
-      console.warn('[coverArt] Could not extract embedded artwork for', audioPath, error);
+      console.error('[coverArt] Could not extract embedded artwork for', audioPath, error);
     }
 
     coverUrlCache.set(audioPath, null);
@@ -125,6 +139,16 @@ export const CoverArtImage: React.FC<CoverArtImageProps> = ({
   ...props
 }) => {
   const { displayUrl, isLoaded } = useCoverArt(src);
+
+  useEffect(() => {
+    console.log('[coverArt] React component received src', src, 'displayUrl=', displayUrl, 'isLoaded=', isLoaded);
+  }, [src, displayUrl, isLoaded]);
+
+  useEffect(() => {
+    if (displayUrl && displayUrl !== DEFAULT_COVER_URL) {
+      console.log('[coverArt] Image rendered with blob URL', displayUrl);
+    }
+  }, [displayUrl]);
 
   return React.createElement(
     'div',
