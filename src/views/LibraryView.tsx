@@ -4,6 +4,7 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import { Play, Search, LayoutGrid, List, Heart, Disc3, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Track } from '../types';
+import { CoverArtImage } from '../lib/coverArt';
 
 export const LibraryView: React.FC = () => {
   const tracks = useLibraryStore(s => s.tracks);
@@ -161,7 +162,7 @@ export const LibraryView: React.FC = () => {
                   <div className="flex-1 flex items-center gap-2 md:gap-4 min-w-0">
                     <div className="w-10 h-10 rounded shadow-sm overflow-hidden bg-[var(--bg-base)] flex-shrink-0 relative">
                       {track.coverUrl ? (
-                        <img src={track.coverUrl} className="w-full h-full object-cover" alt="" />
+                        <CoverArtImage src={track.coverUrl} className="" wrapperClassName="w-full h-full" fallbackClassName="bg-[var(--bg-elevated)]" />
                       ) : (
                         <div className="w-full h-full bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-tertiary)] opacity-30">
                           <Disc3 size={16} />
@@ -204,7 +205,7 @@ export const LibraryView: React.FC = () => {
               >
                 <div className="relative aspect-square rounded-2xl overflow-hidden mb-3 shadow-md group-hover:shadow-2xl transition-all duration-400 group-hover:-translate-y-1">
                   {track.coverUrl ? (
-                    <img src={track.coverUrl} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out" alt="" />
+                    <CoverArtImage src={track.coverUrl} className="transform group-hover:scale-110 transition-transform duration-700 ease-out" wrapperClassName="w-full h-full" fallbackClassName="bg-[var(--bg-elevated)]" />
                   ) : (
                     <div className="w-full h-full bg-[var(--bg-elevated)] flex items-center justify-center transform group-hover:scale-105 transition-transform duration-500">
                       <Disc3 size={32} className="text-[var(--text-tertiary)] opacity-30" />
@@ -312,7 +313,7 @@ export const LibraryView: React.FC = () => {
                         >
                           <div className="w-10 h-10 rounded-lg overflow-hidden bg-[var(--bg-base)] flex-shrink-0 flex items-center justify-center border border-[var(--border)]/40 relative">
                             {track.coverUrl ? (
-                              <img src={track.coverUrl} className="w-full h-full object-cover" alt="" />
+                              <CoverArtImage src={track.coverUrl} className="" wrapperClassName="w-full h-full" fallbackClassName="bg-[var(--bg-base)]" />
                             ) : (
                               <Disc3 size={16} className="text-[var(--text-tertiary)] opacity-40" />
                             )}

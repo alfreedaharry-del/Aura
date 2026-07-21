@@ -4,6 +4,7 @@ import { ChevronDown, Repeat, Shuffle, SkipForward, SkipBack, Play, Pause } from
 import { motion } from 'motion/react';
 import { useThemeStore } from '../store/useThemeStore';
 import { Track } from '../types';
+import { CoverArtImage } from '../lib/coverArt';
 
 interface NowPlayingProps {
   onClose: () => void;
@@ -213,11 +214,12 @@ export const NowPlayingView: React.FC<NowPlayingProps> = ({ onClose }) => {
           >
             {/* 1. Base Album Image */}
             {currentTrack.coverUrl ? (
-              <img 
+              <CoverArtImage 
                 src={currentTrack.coverUrl} 
-                className="w-full h-full object-cover select-none pointer-events-none" 
+                className="select-none pointer-events-none" 
+                wrapperClassName="w-full h-full"
+                fallbackClassName="bg-gradient-to-br from-zinc-800 to-zinc-900"
                 alt={currentTrack.title}
-                referrerPolicy="no-referrer"
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center p-6 text-center select-none">
@@ -469,7 +471,7 @@ export const NowPlayingView: React.FC<NowPlayingProps> = ({ onClose }) => {
                     {/* Thumbnail cover jacket */}
                     <div className="w-10 h-10 rounded-none bg-zinc-850 overflow-hidden shrink-0 shadow-md relative">
                       {track.coverUrl ? (
-                        <img src={track.coverUrl} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                        <CoverArtImage src={track.coverUrl} className="" wrapperClassName="w-full h-full" fallbackClassName="bg-[var(--bg-elevated)]" alt="" />
                       ) : (
                         <div className="w-full h-full bg-zinc-800" />
                       )}

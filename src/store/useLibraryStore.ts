@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Track, Playlist } from '../types';
 import { dbStore } from '../lib/db';
 import { MusicLibraryService } from '../lib/MusicLibraryService';
+import { preloadCoverBatch } from '../lib/coverArt';
 
 export type LibraryStatus = 'initializing' | 'ready';
 
@@ -52,6 +53,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       await dbStore.clearTracks();
       await dbStore.saveTracks(mergedTracks);
       set({ tracks: mergedTracks, playlists });
+      preloadCoverBatch(mergedTracks.slice(0, 12));
     } catch (e) {
       console.error("Failed to load fixed library", e);
       set({ status: 'ready', isScanning: false });

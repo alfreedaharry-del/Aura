@@ -13,6 +13,7 @@ import { usePlayerStore, useActivePlayer } from './store/usePlayerStore';
 import { motion, AnimatePresence } from 'motion/react';
 import { dbStore } from './lib/db';
 import { Menu } from 'lucide-react';
+import { CoverArtImage } from './lib/coverArt';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('home');
@@ -92,11 +93,12 @@ export default function App() {
               transition={{ duration: 1.8, ease: "easeInOut" }}
               className="absolute inset-0 w-full h-full"
             >
-              <img
+              <CoverArtImage
                 src={currentTrack.coverUrl}
                 alt=""
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover scale-[1.18] filter blur-[110px] select-none"
+                className="scale-[1.18] filter blur-[110px] select-none"
+                wrapperClassName="w-full h-full"
+                fallbackClassName="bg-[var(--bg-base)]"
               />
               {/* Premium Vertical Fade: Extremely gradual multi-stop mask to blend completely into the active theme color near bottom */}
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[var(--bg-base)]/15 via-[var(--bg-base)]/45 via-[var(--bg-base)]/75 via-[var(--bg-base)]/95 to-[var(--bg-base)]" />

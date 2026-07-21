@@ -4,6 +4,7 @@ import { usePlayerStore, useActivePlayer } from '../store/usePlayerStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { engine } from '../lib/audioEngine';
 import { motion, AnimatePresence } from 'motion/react';
+import { CoverArtImage } from '../lib/coverArt';
 
 interface BottomPlayerProps {
   hideTrackInfo?: boolean;
@@ -119,7 +120,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ hideTrackInfo = fals
           <div className="flex items-center gap-4 w-1/3 min-w-0">
             <div className="w-12 h-12 rounded shadow-sm overflow-hidden bg-[var(--bg-elevated)] flex-shrink-0">
               {currentTrack.coverUrl ? (
-                 <img src={currentTrack.coverUrl} loading="lazy" decoding="async" className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                 <CoverArtImage src={currentTrack.coverUrl} className="" wrapperClassName="w-full h-full" fallbackClassName="bg-[var(--bg-elevated)]" />
               ) : (
                  <div className="w-full h-full bg-[var(--bg-elevated)]" />
               )}

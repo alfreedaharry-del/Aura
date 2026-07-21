@@ -5,6 +5,7 @@ import { Play, Heart, Disc3, Clock, Database, ListMusic } from 'lucide-react';
 import { motion } from 'motion/react';
 import { RecordPlayer } from '../components/RecordPlayer';
 import { LibraryInsightsNetwork } from '../components/LibraryInsightsNetwork';
+import { CoverArtImage } from '../lib/coverArt';
 
 const Equalizer: React.FC = () => {
   return (
@@ -223,7 +224,7 @@ export const HomeView: React.FC = () => {
                           {/* Thumbnail Cover */}
                           <div className="w-10 h-10 rounded-lg overflow-hidden bg-[var(--bg-elevated)] shrink-0 relative border border-[var(--border)]">
                             {track.coverUrl ? (
-                              <img src={track.coverUrl} loading="lazy" decoding="async" className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                              <CoverArtImage src={track.coverUrl} className="" wrapperClassName="w-full h-full" fallbackClassName="bg-[var(--bg-elevated)]" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
                                 <Disc3 size={16} className="text-[var(--text-tertiary)] opacity-30" />
@@ -286,7 +287,7 @@ export const HomeView: React.FC = () => {
                   >
                     <div className="relative aspect-square rounded-2xl md:rounded-[2.5rem] overflow-hidden mb-4 shadow-sm group-hover:shadow-2xl transition-all duration-500 group-hover:-translate-y-1">
                       {track.coverUrl ? (
-                        <img src={track.coverUrl} loading="lazy" decoding="async" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out" alt="" />
+                        <CoverArtImage src={track.coverUrl} className="transform group-hover:scale-110 transition-transform duration-700 ease-out" wrapperClassName="w-full h-full" fallbackClassName="bg-[var(--bg-elevated)]" />
                       ) : (
                         <div className="w-full h-full bg-[var(--bg-elevated)] flex items-center justify-center transform group-hover:scale-105 transition-transform duration-500">
                           <Disc3 size={32} className="text-[var(--text-tertiary)] opacity-30" />

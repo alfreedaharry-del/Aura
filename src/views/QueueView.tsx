@@ -2,6 +2,7 @@ import React from 'react';
 import { useActivePlayer } from '../store/usePlayerStore';
 import { Play, Disc3, Clock, Trash2, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
+import { CoverArtImage } from '../lib/coverArt';
 
 export const QueueView: React.FC = () => {
   const { queue, queueIndex, currentTrack, playTrack, isPlaying, pause, resume } = useActivePlayer();
@@ -41,7 +42,7 @@ export const QueueView: React.FC = () => {
             <div className="flex items-center gap-4 sm:gap-6">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-[var(--bg-elevated)] shrink-0 shadow-lg border border-white/10">
                 {currentTrack.coverUrl ? (
-                  <img src={currentTrack.coverUrl} className="w-full h-full object-cover" alt="" />
+                  <CoverArtImage src={currentTrack.coverUrl} className="" wrapperClassName="w-full h-full" fallbackClassName="bg-[var(--bg-elevated)]" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <Disc3 className="text-[var(--text-tertiary)] opacity-30 animate-spin" size={24} style={{ animationDuration: '8s' }} />
@@ -91,7 +92,7 @@ export const QueueView: React.FC = () => {
                   >
                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-[var(--bg-elevated)] shrink-0 relative">
                       {track.coverUrl ? (
-                        <img src={track.coverUrl} className="w-full h-full object-cover" alt="" />
+                        <CoverArtImage src={track.coverUrl} className="" wrapperClassName="w-full h-full" fallbackClassName="bg-[var(--bg-elevated)]" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <Disc3 size={16} className="text-[var(--text-tertiary)] opacity-30" />

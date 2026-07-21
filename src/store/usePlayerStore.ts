@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Track } from '../types';
 import { engine } from '../lib/audioEngine';
+import { preloadCoverBatch } from '../lib/coverArt';
 import { useSettingsStore } from './useSettingsStore';
 import { useLibraryStore } from './useLibraryStore';
 
@@ -110,6 +111,13 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
         lastPlaylistId: playlistId
       });
 
+      const nextIndex = index !== -1 ? index + 1 : -1;
+      const nextTrackForQueue = nextIndex >= 0 && nextIndex < resolvedQueue.length
+        ? resolvedQueue[nextIndex]
+        : (repeatMode === 'all' && resolvedQueue.length > 0 ? resolvedQueue[0] : null);
+      const visibleTracks = resolvedQueue.slice(Math.max(0, index !== -1 ? index - 1 : 0), Math.max(0, index !== -1 ? index + 2 : 2));
+      preloadCoverBatch([track, nextTrackForQueue, ...visibleTracks]);
+
       localStorage.setItem('currentTrack', JSON.stringify(track));
       localStorage.setItem('queue', JSON.stringify(resolvedQueue));
       localStorage.setItem('queueIndex', (index !== -1 ? index : get().queueIndex).toString());
@@ -122,7 +130,6 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       try {
         await engine.playTrack(track);
 
-        const nextIndex = index !== -1 ? index + 1 : -1;
         const nextTrack = nextIndex >= 0 && nextIndex < resolvedQueue.length
           ? resolvedQueue[nextIndex]
           : (repeatMode === 'all' && resolvedQueue.length > 0 ? resolvedQueue[0] : null);
