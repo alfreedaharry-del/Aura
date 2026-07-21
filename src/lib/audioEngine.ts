@@ -12,13 +12,15 @@ export class AudioEngine {
   onTimeUpdate?: (time: number) => void;
   onDurationChange?: (duration: number) => void;
 
-  private animationFrameId: number | null = null;
   public analyser: AnalyserNode;
+  private pendingTrack: Track | null = null;
+  private preloadUrl: string | null = null;
 
   constructor() {
     this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
     this.audioElement = new Audio();
     this.audioElement.crossOrigin = 'anonymous';
+    this.audioElement.preload = 'none';
 
     // Core nodes
     this.gainNode = this.context.createGain();
@@ -78,21 +80,36 @@ export class AudioEngine {
     this.analyser.connect(this.context.destination);
   }
 
+  private setAudioSource(track: Track) {
+    if (this.audioElement.src === track.filePath) {
+      return;
+    }
+
+    this.audioElement.src = track.filePath;
+    this.audioElement.load();
+  }
+
+  async preloadTrack(track: Track) {
+    this.pendingTrack = track;
+    this.preloadUrl = track.filePath;
+    this.audioElement.src = track.filePath;
+    this.audioElement.load();
+  }
+
   async playTrack(track: Track) {
     if (this.context.state === 'suspended') {
       await this.context.resume();
     }
-    
+
     this.connectNodes();
-    this.audioElement.src = track.filePath;
-    this.audioElement.load();
+    this.setAudioSource(track);
+    this.audioElement.currentTime = 0;
     await this.audioElement.play();
   }
 
   async loadTrackOnly(track: Track, seekTo: number = 0) {
     this.connectNodes();
-    this.audioElement.src = track.filePath;
-    this.audioElement.load();
+    this.setAudioSource(track);
     this.audioElement.currentTime = seekTo;
   }
 

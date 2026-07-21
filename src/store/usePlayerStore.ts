@@ -84,16 +84,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       const track = get().currentTrack ? libraryTracks.find(candidate => candidate.id === get().currentTrack?.id) || get().currentTrack : null;
       if (track) {
         set({ currentTrack: track });
-        try {
-          await engine.loadTrackOnly(track, get().currentTime);
-        } catch (e) {
-          console.warn("initPlayer loadTrackOnly failed:", e);
-        }
       }
     },
 
     playTrack: async (track, queue, playlistId = null) => {
       const { setVolume, eqBands, volume, reverbPreset } = useSettingsStore.getState();
+      const { repeatMode } = get();
       
       // Apply current settings
       engine.setVolume(volume);
@@ -125,6 +121,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
 
       try {
         await engine.playTrack(track);
+
+        const nextIndex = index !== -1 ? index + 1 : -1;
+        const nextTrack = nextIndex >= 0 && nextIndex < resolvedQueue.length
+          ? resolvedQueue[nextIndex]
+          : (repeatMode === 'all' && resolvedQueue.length > 0 ? resolvedQueue[0] : null);
+
+        if (nextTrack) {
+          void engine.preloadTrack(nextTrack);
+        }
       } catch (err) {
         console.warn("Playback failed or aborted:", err);
         if (err instanceof Error && err.name !== 'AbortError') {
@@ -152,22 +157,23 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
         return;
       }
 
+      let targetTrack: Track;
       if (shuffle) {
         let nextIndex = Math.floor(Math.random() * queue.length);
         if (queue.length > 1 && nextIndex === queueIndex) {
           nextIndex = (nextIndex + 1) % queue.length;
         }
-        get().playTrack(queue[nextIndex]);
+        targetTrack = queue[nextIndex];
+      } else if (queueIndex < queue.length - 1) {
+        targetTrack = queue[queueIndex + 1];
+      } else if (repeatMode === 'all') {
+        targetTrack = queue[0];
+      } else {
+        set({ isPlaying: false });
         return;
       }
 
-      if (queueIndex < queue.length - 1) {
-        get().playTrack(queue[queueIndex + 1]);
-      } else if (repeatMode === 'all') {
-        get().playTrack(queue[0]);
-      } else {
-        set({ isPlaying: false });
-      }
+      get().playTrack(targetTrack);
     },
 
     previous: () => {
@@ -183,12 +189,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
         if (queue.length > 1 && prevIndex === queueIndex) {
           prevIndex = (prevIndex - 1 + queue.length) % queue.length;
         }
-        get().playTrack(queue[prevIndex]);
+        const targetTrack = queue[prevIndex];
+        get().playTrack(targetTrack);
       } else if (queueIndex > 0) {
-        get().playTrack(queue[queueIndex - 1]);
+        const targetTrack = queue[queueIndex - 1];
+        get().playTrack(targetTrack);
       } else {
         if (repeatMode === 'all') {
-          get().playTrack(queue[queue.length - 1]);
+          const targetTrack = queue[queue.length - 1];
+          get().playTrack(targetTrack);
         } else {
           engine.seek(0);
           set({ currentTime: 0 });

@@ -28,6 +28,9 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     set({ isScanning: true });
     try {
       const { songs, directories } = await MusicLibraryService.loadFixedLibrary();
+      const playlists = await dbStore.getAllPlaylists();
+      set({ tracks: songs, directories, playlists, status: 'ready', isScanning: false });
+
       const existingTracks = await dbStore.getAllTracks();
       const existingMap = new Map(existingTracks.map(t => [t.id, t]));
 
@@ -46,12 +49,9 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         return track;
       });
 
-      // Save merged back to DB to persist
       await dbStore.clearTracks();
       await dbStore.saveTracks(mergedTracks);
-
-      const playlists = await dbStore.getAllPlaylists();
-      set({ tracks: mergedTracks, directories, playlists, status: 'ready', isScanning: false });
+      set({ tracks: mergedTracks, playlists });
     } catch (e) {
       console.error("Failed to load fixed library", e);
       set({ status: 'ready', isScanning: false });

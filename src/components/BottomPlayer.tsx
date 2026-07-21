@@ -119,7 +119,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ hideTrackInfo = fals
           <div className="flex items-center gap-4 w-1/3 min-w-0">
             <div className="w-12 h-12 rounded shadow-sm overflow-hidden bg-[var(--bg-elevated)] flex-shrink-0">
               {currentTrack.coverUrl ? (
-                 <img src={currentTrack.coverUrl} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                 <img src={currentTrack.coverUrl} loading="lazy" decoding="async" className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
               ) : (
                  <div className="w-full h-full bg-[var(--bg-elevated)]" />
               )}

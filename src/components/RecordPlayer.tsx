@@ -51,7 +51,7 @@ export const VinylRecord: React.FC<{ coverUrl?: string; isPlaying: boolean }> = 
         {/* Center Label (Album Art miniaturized, perfectly circular) */}
         <div className="w-16 h-16 md:w-22 md:h-22 rounded-full bg-neutral-900 border-4 border-neutral-950 flex items-center justify-center overflow-hidden relative shadow-inner">
           {coverUrl ? (
-            <img src={coverUrl} className="w-full h-full object-cover pointer-events-none select-none" alt="" referrerPolicy="no-referrer" />
+            <img src={coverUrl} loading="lazy" decoding="async" className="w-full h-full object-cover pointer-events-none select-none" alt="" referrerPolicy="no-referrer" />
           ) : (
             <div className="w-full h-full bg-neutral-800" />
           )}
@@ -219,7 +219,7 @@ export const RecordPlayer: React.FC<RecordPlayerProps> = ({
           }}
         >
           {coverUrl ? (
-            <img src={coverUrl} className="w-full h-full object-cover pointer-events-none select-none" alt="" referrerPolicy="no-referrer" />
+            <img src={coverUrl} loading="lazy" decoding="async" className="w-full h-full object-cover pointer-events-none select-none" alt="" referrerPolicy="no-referrer" />
           ) : (
             <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
               <Disc3 size={48} className="text-neutral-600 animate-spin" style={{ animationDuration: '10s' }} />

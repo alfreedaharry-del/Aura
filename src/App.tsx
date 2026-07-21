@@ -63,7 +63,7 @@ export default function App() {
     });
   }, []);
 
-  if (!settings.isLoaded || library.status === 'initializing') {
+  if (!settings.isLoaded) {
     return <div className="h-screen flex items-center justify-center bg-[var(--bg-base)] text-[var(--text-primary)]">Loading...</div>;
   }
 
