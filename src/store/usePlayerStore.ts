@@ -75,16 +75,26 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
     initPlayer: async () => {
       const libraryTracks = useLibraryStore.getState().tracks;
       const resolvedQueue = get().queue.length > 0 ? get().queue : libraryTracks;
-      const normalizedQueue = resolvedQueue.map(track => libraryTracks.find(candidate => candidate.id === track.id) || track);
+      const normalizedQueue = resolvedQueue
+        .map(track => libraryTracks.find(candidate => candidate.id === track.id) || null)
+        .filter((track): track is Track => Boolean(track));
 
       if (normalizedQueue.length > 0) {
         set({ queue: normalizedQueue, queueIndex: get().queueIndex >= 0 && get().queueIndex < normalizedQueue.length ? get().queueIndex : 0 });
         localStorage.setItem('queue', JSON.stringify(normalizedQueue));
+      } else {
+        set({ queue: [], queueIndex: -1 });
+        localStorage.removeItem('queue');
+        localStorage.removeItem('queueIndex');
       }
 
-      const track = get().currentTrack ? libraryTracks.find(candidate => candidate.id === get().currentTrack?.id) || get().currentTrack : null;
-      if (track) {
-        set({ currentTrack: track });
+      const currentTrack = get().currentTrack ? libraryTracks.find(candidate => candidate.id === get().currentTrack?.id) || null : null;
+      if (currentTrack) {
+        set({ currentTrack });
+        localStorage.setItem('currentTrack', JSON.stringify(currentTrack));
+      } else {
+        set({ currentTrack: null, duration: 0 });
+        localStorage.removeItem('currentTrack');
       }
     },
 
@@ -246,12 +256,12 @@ export function useActivePlayer() {
   const player = usePlayerStore();
   
   const currentTrack = player.currentTrack 
-    ? (tracks.find(t => t.id === player.currentTrack?.id) || player.currentTrack) 
+    ? (tracks.find(t => t.id === player.currentTrack?.id) || null) 
     : null;
     
-  const queue = player.queue.map(
-    qt => tracks.find(t => t.id === qt.id) || qt
-  );
+  const queue = player.queue
+    .map(qt => tracks.find(t => t.id === qt.id))
+    .filter((t): t is NonNullable<typeof t> => Boolean(t)) as typeof player.queue;
   
   return {
     ...player,

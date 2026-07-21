@@ -4,6 +4,8 @@ import { dbStore } from '../lib/db';
 import { MusicLibraryService } from '../lib/MusicLibraryService';
 import { preloadCoverBatch } from '../lib/coverArt';
 
+let autoRefreshTimer: number | null = null;
+
 export type LibraryStatus = 'initializing' | 'ready';
 
 interface LibraryState {
@@ -30,30 +32,19 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     try {
       const { songs, directories } = await MusicLibraryService.loadFixedLibrary();
       const playlists = await dbStore.getAllPlaylists();
-      set({ tracks: songs, directories, playlists, status: 'ready', isScanning: false });
+      const normalizedPlaylists = playlists.map(playlist => ({
+        ...playlist,
+        trackIds: playlist.trackIds.filter(trackId => songs.some(track => track.id === trackId)),
+      }));
 
-      const existingTracks = await dbStore.getAllTracks();
-      const existingMap = new Map(existingTracks.map(t => [t.id, t]));
+      set({ tracks: songs, directories, playlists: normalizedPlaylists, status: 'ready', isScanning: false });
+      preloadCoverBatch(songs.slice(0, 12));
 
-      const mergedTracks = songs.map(track => {
-        const existing = existingMap.get(track.id);
-        if (existing) {
-          return {
-            ...track,
-            playCount: existing.playCount || 0,
-            lastPlayed: existing.lastPlayed,
-            dateAdded: existing.dateAdded || track.dateAdded,
-            isFavorite: existing.isFavorite || false,
-            customOrder: existing.customOrder || 0
-          };
-        }
-        return track;
-      });
-
-      await dbStore.clearTracks();
-      await dbStore.saveTracks(mergedTracks);
-      set({ tracks: mergedTracks, playlists });
-      preloadCoverBatch(mergedTracks.slice(0, 12));
+      if (typeof window !== 'undefined' && autoRefreshTimer === null) {
+        autoRefreshTimer = window.setInterval(() => {
+          void get().loadLibrary();
+        }, 5000);
+      }
     } catch (e) {
       console.error("Failed to load fixed library", e);
       set({ status: 'ready', isScanning: false });
@@ -66,7 +57,6 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     if (trackIndex !== -1) {
       const track = { ...tracks[trackIndex], playCount: tracks[trackIndex].playCount + 1, lastPlayed: Date.now() };
       tracks[trackIndex] = track;
-      dbStore.saveTrack(track);
       set({ tracks });
     }
   },
@@ -77,14 +67,12 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     if (trackIndex !== -1) {
       const track = { ...tracks[trackIndex], isFavorite: !tracks[trackIndex].isFavorite };
       
-      // If newly favorited, append to customOrder
       if (track.isFavorite) {
         const maxOrder = Math.max(0, ...tracks.filter(t => t.isFavorite).map(t => t.customOrder || 0));
         track.customOrder = maxOrder + 1;
       }
       
       tracks[trackIndex] = track;
-      dbStore.saveTrack(track);
       set({ tracks });
     }
   },
@@ -95,7 +83,6 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       const trackIndex = tracks.findIndex(t => t.id === id);
       if (trackIndex !== -1) {
         tracks[trackIndex] = { ...tracks[trackIndex], customOrder: index };
-        dbStore.saveTrack(tracks[trackIndex]);
       }
     });
     set({ tracks });

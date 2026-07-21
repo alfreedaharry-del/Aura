@@ -4,33 +4,77 @@ import fs from "fs/promises";
 import { existsSync } from "fs";
 import { createServer as createViteServer } from "vite";
 
+// ---------------------------------------------------------------------------
+// Helpers — defined at MODULE scope so they are always in scope for all route
+// handlers regardless of async function hoisting behaviour.
+// ---------------------------------------------------------------------------
+
+function isAudioFile(fileName: string): boolean {
+  const normalized = fileName.toLowerCase();
+  return ['.mp3', '.m4a', '.aac', '.wav', '.flac', '.ogg', '.mp4', '.m4p'].some(ext => normalized.endsWith(ext));
+}
+
+function toDisplayTitle(fileName: string): string {
+  return fileName
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// ---------------------------------------------------------------------------
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   app.use(express.json());
 
-  // Static serving of bundled songs directory with cache control
-  const songsRoot = path.join(process.cwd(), 'public', 'songs');
-  app.use('/songs', express.static(songsRoot));
+  // Static serving of the songs directory so /songs/<filename> resolves correctly
+  const songsStaticRoot = path.join(process.cwd(), 'public', 'songs');
+  app.use('/songs', express.static(songsStaticRoot));
 
-  // API Route: Return the bundled music registry and directories
+  // API Route: Dynamically scan public/songs and return every audio file found
   app.get('/api/songs-structure', async (req, res) => {
+    const songsRoot = path.join(process.cwd(), 'public', 'songs');
+
+    // ---- Diagnostic logging ----
+    console.log('[/api/songs-structure] Resolved songs path:', songsRoot);
+    console.log('[/api/songs-structure] Directory exists:', existsSync(songsRoot));
+
     try {
-      const registryPath = path.join(process.cwd(), 'src', 'lib', 'bundledMusicRegistry.generated.json');
-      if (!existsSync(registryPath)) {
-        return res.json({ songs: [], directories: ['/'] });
-      }
+      const entries = await fs.readdir(songsRoot, { withFileTypes: true });
+      console.log('[/api/songs-structure] Total directory entries:', entries.length, entries.map(e => e.name));
 
-      const registry = await fs.readFile(registryPath, 'utf8');
-      const parsedRegistry = JSON.parse(registry);
+      const audioEntries = entries
+        .filter(entry => entry.isFile() && isAudioFile(entry.name))
+        .sort((a, b) => a.name.localeCompare(b.name));
 
-      res.json({
-        songs: parsedRegistry,
-        directories: ['/']
-      });
+      console.log('[/api/songs-structure] Audio files found:', audioEntries.length, audioEntries.map(e => e.name));
+
+      const songs = await Promise.all(audioEntries.map(async (entry) => {
+        const fullPath = path.join(songsRoot, entry.name);
+        const stats = await fs.stat(fullPath);
+        const filePath = `/songs/${encodeURIComponent(entry.name)}`;
+
+        return {
+          id: filePath,
+          title: toDisplayTitle(entry.name),
+          artist: 'Unknown Artist',
+          album: 'Unknown Album',
+          duration: 0,
+          filePath,
+          dateAdded: stats.mtimeMs,
+          fileSize: stats.size,
+          fileType: path.extname(entry.name).slice(1),
+          parentPath: '/',
+        };
+      }));
+
+      console.log('[/api/songs-structure] Returning', songs.length, 'song(s)');
+      res.json({ songs, directories: ['/'] });
     } catch (err: any) {
-      console.warn('[server] Unable to load bundled music registry', err);
+      console.error('[/api/songs-structure] ERROR scanning public/songs:', err);
       res.status(500).json({ error: err.message });
     }
   });
