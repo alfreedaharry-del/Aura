@@ -12,7 +12,6 @@ export interface Track {
   dateAdded: number;
   playCount: number;
   lastPlayed?: number;
-  fileHandle?: any; // FileSystemFileHandle
   fileSize?: number;
   fileType?: string;
   isFavorite?: boolean;
@@ -53,7 +52,6 @@ export type ReverbPreset = 'none' | 'small-room' | 'medium-room' | 'concert-hall
 
 export interface AppSettings {
   theme: Theme;
-  musicFolderHandle: any | null; // FileSystemDirectoryHandle
   volume: number;
   eqPreset: EqPreset;
   reverbPreset: ReverbPreset;

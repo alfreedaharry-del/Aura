@@ -10,7 +10,6 @@ interface SettingsState extends AppSettings {
   setEqPreset: (preset: EqPreset) => void;
   setEqBands: (bands: number[]) => void;
   setReverbPreset: (preset: ReverbPreset) => void;
-  setMusicFolderHandle: (handle: any) => void;
   setLastScanTime: (time: number) => void;
   setAutoMonitor: (monitor: boolean) => void;
   setSidebarExpanded: (expanded: boolean) => void;
@@ -19,7 +18,6 @@ interface SettingsState extends AppSettings {
 
 const defaultSettings: AppSettings = {
   theme: 'frosted-glass',
-  musicFolderHandle: null,
   volume: 0.8,
   eqPreset: 'flat',
   reverbPreset: 'none',
@@ -37,7 +35,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     const state = get();
     const toSave: AppSettings = {
       theme: updates.theme !== undefined ? updates.theme : state.theme,
-      musicFolderHandle: updates.musicFolderHandle !== undefined ? updates.musicFolderHandle : state.musicFolderHandle,
       volume: updates.volume !== undefined ? updates.volume : state.volume,
       eqPreset: updates.eqPreset !== undefined ? updates.eqPreset : state.eqPreset,
       reverbPreset: updates.reverbPreset !== undefined ? updates.reverbPreset : state.reverbPreset,
@@ -77,10 +74,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     setReverbPreset: (reverbPreset) => {
       set({ reverbPreset });
       save({ reverbPreset });
-    },
-    setMusicFolderHandle: (musicFolderHandle) => {
-      set({ musicFolderHandle });
-      save({ musicFolderHandle });
     },
     setLastScanTime: (lastScanTime) => {
       set({ lastScanTime });

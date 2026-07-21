@@ -72,8 +72,18 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
     lastPlaylistId: localStorage.getItem('lastPlaylistId') || null,
 
     initPlayer: async () => {
-      const track = get().currentTrack;
+      const libraryTracks = useLibraryStore.getState().tracks;
+      const resolvedQueue = get().queue.length > 0 ? get().queue : libraryTracks;
+      const normalizedQueue = resolvedQueue.map(track => libraryTracks.find(candidate => candidate.id === track.id) || track);
+
+      if (normalizedQueue.length > 0) {
+        set({ queue: normalizedQueue, queueIndex: get().queueIndex >= 0 && get().queueIndex < normalizedQueue.length ? get().queueIndex : 0 });
+        localStorage.setItem('queue', JSON.stringify(normalizedQueue));
+      }
+
+      const track = get().currentTrack ? libraryTracks.find(candidate => candidate.id === get().currentTrack?.id) || get().currentTrack : null;
       if (track) {
+        set({ currentTrack: track });
         try {
           await engine.loadTrackOnly(track, get().currentTime);
         } catch (e) {

@@ -12,7 +12,6 @@ export class AudioEngine {
   onTimeUpdate?: (time: number) => void;
   onDurationChange?: (duration: number) => void;
 
-  private objectUrl: string | null = null;
   private animationFrameId: number | null = null;
   public analyser: AnalyserNode;
 
@@ -85,48 +84,14 @@ export class AudioEngine {
     }
     
     this.connectNodes();
-
-    if (this.objectUrl) {
-      URL.revokeObjectURL(this.objectUrl);
-    }
-    
-    if (track.fileHandle) {
-      // It's a local file
-      try {
-        const file = await track.fileHandle.getFile();
-        this.objectUrl = URL.createObjectURL(file);
-        this.audioElement.src = this.objectUrl;
-      } catch (e) {
-        console.error("Failed to read file", e);
-      }
-    } else {
-      // Temporary fallback: use filePath as the direct URL
-      this.audioElement.src = track.filePath;
-    }
-    
+    this.audioElement.src = track.filePath;
     this.audioElement.load();
     await this.audioElement.play();
   }
 
   async loadTrackOnly(track: Track, seekTo: number = 0) {
     this.connectNodes();
-
-    if (this.objectUrl) {
-      URL.revokeObjectURL(this.objectUrl);
-    }
-    
-    if (track.fileHandle) {
-      try {
-        const file = await track.fileHandle.getFile();
-        this.objectUrl = URL.createObjectURL(file);
-        this.audioElement.src = this.objectUrl;
-      } catch (e) {
-        console.error("Failed to read file", e);
-      }
-    } else {
-      this.audioElement.src = track.filePath;
-    }
-    
+    this.audioElement.src = track.filePath;
     this.audioElement.load();
     this.audioElement.currentTime = seekTo;
   }

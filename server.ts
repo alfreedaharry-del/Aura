@@ -5,109 +5,33 @@ import { existsSync } from "fs";
 import { createServer as createViteServer } from "vite";
 import * as musicMetadata from "music-metadata";
 
-// Recursive function to scan directories and tracks
-async function scanDirectory(currentDir: string, rootDir: string, directoriesList: string[], tracksList: any[]) {
-  // Add currentDir to directoriesList relative to rootDir
-  const relDir = path.relative(rootDir, currentDir);
-  const formattedRelDir = relDir ? '/' + relDir.replace(/\\/g, '/') : '/';
-  if (!directoriesList.includes(formattedRelDir)) {
-    directoriesList.push(formattedRelDir);
-  }
-
-  try {
-    const entries = await fs.readdir(currentDir, { withFileTypes: true });
-    for (const entry of entries) {
-      const fullPath = path.join(currentDir, entry.name);
-      if (entry.isDirectory()) {
-        await scanDirectory(fullPath, rootDir, directoriesList, tracksList);
-      } else if (entry.isFile()) {
-        // Ignore hidden/system files
-        if (entry.name.startsWith('.') || 
-            ['thumbs.db', 'desktop.ini', 'ehthumbs.db'].includes(entry.name.toLowerCase())) {
-          continue;
-        }
-        
-        const ext = path.extname(entry.name).toLowerCase();
-        if (['.mp3', '.flac', '.wav', '.m4a', '.aac', '.ogg'].includes(ext)) {
-          const stats = await fs.stat(fullPath);
-          const relFilePath = path.relative(rootDir, fullPath).replace(/\\/g, '/');
-          
-          // Encode each segment of path to prevent URL issues
-          const encodedFilePath = `/songs/${relFilePath.split('/').map(encodeURIComponent).join('/')}`;
-          
-          let title = path.basename(entry.name, ext);
-          let artist = "Unknown Artist";
-          let album = "Unknown Album";
-          let duration = 0;
-          let hasEmbeddedCover = false;
-
-          try {
-            const metadata = await musicMetadata.parseFile(fullPath);
-            title = metadata.common.title || title;
-            artist = metadata.common.artist || artist;
-            album = metadata.common.album || album;
-            duration = metadata.format.duration || 0;
-            if (metadata.common.picture && metadata.common.picture.length > 0) {
-              hasEmbeddedCover = true;
-            }
-          } catch (err) {
-            // Suppress warnings to keep logs clean
-          }
-
-          let coverUrl: string | undefined = undefined;
-          if (hasEmbeddedCover) {
-            coverUrl = `/api/cover?path=${encodeURIComponent('songs/' + relFilePath)}`;
-          }
-
-          tracksList.push({
-            id: encodedFilePath,
-            title,
-            artist,
-            album,
-            duration,
-            filePath: encodedFilePath,
-            dateAdded: stats.birthtimeMs || stats.mtimeMs || Date.now(),
-            fileSize: stats.size,
-            fileType: ext === '.mp3' ? 'audio/mpeg' : `audio/${ext.slice(1)}`,
-            coverUrl,
-            parentPath: formattedRelDir
-          });
-        }
-      }
-    }
-  } catch (err) {
-    console.error(`Error scanning directory: ${currentDir}`, err);
-  }
-}
-
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   app.use(express.json());
 
-  // Static serving of songs directory with cache control
-  app.use('/songs', express.static(path.join(process.cwd(), 'songs')));
+  // Static serving of bundled songs directory with cache control
+  const songsRoot = path.join(process.cwd(), 'public', 'songs');
+  app.use('/songs', express.static(songsRoot));
 
-  // API Route: Scan songs directory and return flat songs & folder structure
+  // API Route: Return the bundled music registry and directories
   app.get('/api/songs-structure', async (req, res) => {
     try {
-      const rootDir = path.join(process.cwd(), 'songs');
-      const directoriesList: string[] = [];
-      const tracksList: any[] = [];
-      
-      // Ensure songs directory exists
-      if (!existsSync(rootDir)) {
-        await fs.mkdir(rootDir, { recursive: true });
+      const registryPath = path.join(process.cwd(), 'src', 'lib', 'bundledMusicRegistry.generated.json');
+      if (!existsSync(registryPath)) {
+        return res.json({ songs: [], directories: ['/'] });
       }
-      
-      await scanDirectory(rootDir, rootDir, directoriesList, tracksList);
-      
+
+      const registry = await fs.readFile(registryPath, 'utf8');
+      const parsedRegistry = JSON.parse(registry);
+
       res.json({
-        songs: tracksList,
-        directories: directoriesList
+        songs: parsedRegistry,
+        directories: ['/']
       });
     } catch (err: any) {
+      console.warn('[server] Unable to load bundled music registry', err);
       res.status(500).json({ error: err.message });
     }
   });

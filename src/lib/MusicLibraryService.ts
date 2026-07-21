@@ -1,4 +1,5 @@
 import { Track } from '../types';
+import { getBundledMusicRegistry } from './bundledMusicRegistry';
 
 export interface LibraryStructure {
   songs: Track[];
@@ -7,22 +8,33 @@ export interface LibraryStructure {
 
 export class MusicLibraryService {
   static async loadFixedLibrary(): Promise<LibraryStructure> {
-    const res = await fetch('/api/songs-structure');
-    if (!res.ok) {
-      throw new Error("Failed to load library structure from server");
-    }
-    const data = await res.json();
-    
-    const songsWithCovers = (data.songs || []).map((track: Track) => {
-      return {
+    const registryTracks = getBundledMusicRegistry();
+    const verifiedSongs: Track[] = [];
+
+    for (const track of registryTracks) {
+      const normalizedTrack: Track = {
         ...track,
-        coverUrl: track.coverUrl || undefined
+        album: track.album || 'Unknown Album',
+        coverUrl: track.coverUrl || '/default-cover.svg',
       };
-    });
+
+      try {
+        const response = await fetch(normalizedTrack.filePath, { method: 'HEAD' });
+        if (!response.ok) {
+          console.warn(`[music] Skipping missing bundled track: ${normalizedTrack.filePath}`);
+          continue;
+        }
+      } catch (error) {
+        console.warn(`[music] Skipping inaccessible bundled track: ${normalizedTrack.filePath}`, error);
+        continue;
+      }
+
+      verifiedSongs.push(normalizedTrack);
+    }
 
     return {
-      songs: songsWithCovers,
-      directories: data.directories || []
+      songs: verifiedSongs,
+      directories: ['/']
     };
   }
 }
